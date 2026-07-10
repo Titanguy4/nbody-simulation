@@ -14,7 +14,10 @@ import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Configuration
+@Slf4j
 public class MqttConfig {
 
     @Value("${mqtt.broker-url}")
@@ -45,26 +48,36 @@ public class MqttConfig {
     private String topicPreset;
 
     @Bean
-    public MqttPahoClientFactory mqttClientFactory(){
+    public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
 
-        options.setServerURIs(new String[]{brokerUrl});
+        options.setServerURIs(new String[] { brokerUrl });
         options.setCleanSession(true);
         factory.setConnectionOptions(options);
 
         return factory;
     }
 
-    @Bean MessageChannel mqttInputChannel() { return new DirectChannel(); }
-
-    @Bean MessageChannel mqttOutputChannel(){
+    @Bean
+    MessageChannel mqttInputChannel() {
         return new DirectChannel();
     }
 
-    @Bean MessageChannel simulationEventAdd() { return new DirectChannel(); }
+    @Bean
+    MessageChannel mqttOutputChannel() {
+        return new DirectChannel();
+    }
 
-    @Bean MessageChannel simulationEventMove() { return new DirectChannel(); }
+    @Bean
+    MessageChannel simulationEventAdd() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    MessageChannel simulationEventMove() {
+        return new DirectChannel();
+    }
 
     @Bean
     public MqttPahoMessageDrivenChannelAdapter debugAdapter() {
@@ -75,13 +88,11 @@ public class MqttConfig {
     }
 
     @Bean
-    public MqttPahoMessageDrivenChannelAdapter adapterAdd(){
-        MqttPahoMessageDrivenChannelAdapter adapter =
-                new MqttPahoMessageDrivenChannelAdapter(
-                        clientId,
-                        mqttClientFactory(),
-                        topicEventAdd
-                );
+    public MqttPahoMessageDrivenChannelAdapter adapterAdd() {
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                clientId,
+                mqttClientFactory(),
+                topicEventAdd);
 
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
@@ -92,13 +103,11 @@ public class MqttConfig {
     }
 
     @Bean
-    public MqttPahoMessageDrivenChannelAdapter adapterMove(){
-        MqttPahoMessageDrivenChannelAdapter adapter =
-                new MqttPahoMessageDrivenChannelAdapter(
-                        clientId,
-                        mqttClientFactory(),
-                        topicEventMove
-                );
+    public MqttPahoMessageDrivenChannelAdapter adapterMove() {
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                clientId,
+                mqttClientFactory(),
+                topicEventMove);
 
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
@@ -112,14 +121,14 @@ public class MqttConfig {
     @ServiceActivator(inputChannel = "mqttInputChannel")
     public MessageHandler handler() {
         return message -> {
-            System.out.println("🪵 [DEBUG MQTT] Topic: " + message.getHeaders().get("mqtt_receivedTopic"));
-            System.out.println("🪵 Payload: " + message.getPayload());
+            log.info("🪵 [DEBUG MQTT] Topic: {} ", message.getHeaders().get("mqtt_receivedTopic"));
+            log.info("🪵 Payload: {} ", message.getPayload());
         };
     }
 
     @Bean
     @ServiceActivator(inputChannel = "mqttOutputChannel")
-    public MessageHandler mqttOutbound(){
+    public MessageHandler mqttOutbound() {
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientId, mqttClientFactory());
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(outgoingTopic);
