@@ -8,12 +8,12 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.titanguy.nbody.models.Body;
 import com.titanguy.nbody.models.Vector2D;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 @Slf4j
@@ -67,7 +67,7 @@ public class SimulationService {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             return objectMapper.writeValueAsString(bodies);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Erreur lors de la conversion des corps en JSON pour l'envoie", e.getMessage(), e);
             return "[]";
         }

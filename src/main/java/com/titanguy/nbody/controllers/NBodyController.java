@@ -4,12 +4,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.titanguy.nbody.models.Body;
 import com.titanguy.nbody.services.NBodyService;
 
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @Slf4j
@@ -28,7 +28,7 @@ public class NBodyController {
         try {
             Body body = objectMapper.readValue(bodyJson, Body.class);
             this.nBodyService.addBody(body);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Erreur de désérialisation du JSON pour l'ajout du corps : {}", e.getMessage(), e);
             return ResponseEntity.status(400).body("Erreur de format JSON");
         } catch (Exception e) {
@@ -44,7 +44,7 @@ public class NBodyController {
         try {
             Body body = objectMapper.readValue(bodyJson, Body.class);
             nBodyService.updateBody(body);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.error("Erreur de désérialisation du JSON pour movement du corps : {}", e.getMessage(), e);
             return ResponseEntity.status(400).body("Erreur de format JSON");
         } catch (Exception e) {

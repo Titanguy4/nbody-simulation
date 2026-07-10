@@ -1,18 +1,17 @@
 package com.titanguy.nbody.config;
 
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
-import org.springframework.integration.mqtt.core.DefaultMqttPahoClientFactory;
-import org.springframework.integration.mqtt.core.MqttPahoClientFactory;
-import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
-import org.springframework.integration.mqtt.outbound.MqttPahoMessageHandler;
-import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
+import org.springframework.integration.mqtt.core.Mqttv5ClientManager;
+import org.springframework.integration.mqtt.inbound.Mqttv5PahoMessageDrivenChannelAdapter;
+import org.springframework.integration.mqtt.outbound.Mqttv5PahoMessageHandler;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
+import org.springframework.messaging.converter.StringMessageConverter;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,15 +47,13 @@ public class MqttConfig {
     private String topicPreset;
 
     @Bean
-    public MqttPahoClientFactory mqttClientFactory() {
-        DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
-        MqttConnectOptions options = new MqttConnectOptions();
+    public Mqttv5ClientManager mqttClientManager() {
+        MqttConnectionOptions options = new MqttConnectionOptions();
 
         options.setServerURIs(new String[] { brokerUrl });
-        options.setCleanSession(true);
-        factory.setConnectionOptions(options);
+        options.setCleanStart(true);
 
-        return factory;
+        return new Mqttv5ClientManager(options, clientId);
     }
 
     @Bean
@@ -67,6 +64,11 @@ public class MqttConfig {
     @Bean
     MessageChannel mqttOutputChannel() {
         return new DirectChannel();
+    }
+
+    @Bean(name = "integrationArgumentResolverMessageConverter")
+    public StringMessageConverter integrationArgumentResolverMessageConverter() {
+        return new StringMessageConverter();
     }
 
     @Bean
@@ -80,22 +82,22 @@ public class MqttConfig {
     }
 
     @Bean
-    public MqttPahoMessageDrivenChannelAdapter debugAdapter() {
-        var adapter = new MqttPahoMessageDrivenChannelAdapter("debug-client", mqttClientFactory(), "#");
-        adapter.setConverter(new DefaultPahoMessageConverter());
+    public Mqttv5PahoMessageDrivenChannelAdapter debugAdapter(Mqttv5ClientManager clientManager) {
+        var adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager, "#");
+
         adapter.setOutputChannel(mqttInputChannel());
+        adapter.setMessageConverter(new StringMessageConverter());
+
         return adapter;
     }
 
     @Bean
-    public MqttPahoMessageDrivenChannelAdapter adapterAdd() {
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
-                clientId,
-                mqttClientFactory(),
+    public Mqttv5PahoMessageDrivenChannelAdapter adapterAdd(Mqttv5ClientManager clientManager) {
+        Mqttv5PahoMessageDrivenChannelAdapter adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager,
                 topicEventAdd);
 
         adapter.setCompletionTimeout(5000);
-        adapter.setConverter(new DefaultPahoMessageConverter());
+        adapter.setMessageConverter(new StringMessageConverter());
         adapter.setQos(qos);
         adapter.setOutputChannel(simulationEventAdd());
 
@@ -103,14 +105,12 @@ public class MqttConfig {
     }
 
     @Bean
-    public MqttPahoMessageDrivenChannelAdapter adapterMove() {
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
-                clientId,
-                mqttClientFactory(),
+    public Mqttv5PahoMessageDrivenChannelAdapter adapterMove(Mqttv5ClientManager clientManager) {
+        Mqttv5PahoMessageDrivenChannelAdapter adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager,
                 topicEventMove);
 
         adapter.setCompletionTimeout(5000);
-        adapter.setConverter(new DefaultPahoMessageConverter());
+        adapter.setMessageConverter(new StringMessageConverter());
         adapter.setQos(qos);
         adapter.setOutputChannel(simulationEventMove());
 
@@ -128,10 +128,12 @@ public class MqttConfig {
 
     @Bean
     @ServiceActivator(inputChannel = "mqttOutputChannel")
-    public MessageHandler mqttOutbound() {
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientId, mqttClientFactory());
+    public MessageHandler mqttOutbound(Mqttv5ClientManager clientManager) {
+        Mqttv5PahoMessageHandler messageHandler = new Mqttv5PahoMessageHandler(clientManager);
+
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic(outgoingTopic);
+        messageHandler.setDefaultQos(qos);
 
         return messageHandler;
     }
