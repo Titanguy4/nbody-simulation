@@ -62,8 +62,4 @@ public class NBodyService {
     public void deleteBody(Body body) {
         bodies.remove(body);
     }
-
-    public void setSystemSolar() {
-        this.clearBodies();
-    }
 }
