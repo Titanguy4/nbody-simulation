@@ -1,0 +1,10 @@
+{
+  "id": 1,
+  "type": {
+    "name": "PLANET"
+  },
+  "mass": 5.972e24,
+  "position": { "x": 149600000, "y": 0 },
+  "velocity": { "x": 0, "y": 29780 },
+  "acceleration": { "x": 0, "y": 0 }
+}
