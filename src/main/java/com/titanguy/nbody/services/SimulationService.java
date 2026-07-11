@@ -35,7 +35,7 @@ public class SimulationService {
     @PostConstruct
     public void init() {
         Presets preset = new Presets(nBodyService);
-        preset.setPlanetaryRing();
+        preset.setSystemSolar();
 
         log.info("SimulationService initialized with system solar bodies.");
     }
@@ -46,7 +46,8 @@ public class SimulationService {
 
         // 🕒 1 heure par calcul (3600s) au lieu d'une journée. Plus stable !
         double deltaTime = 86400.0;
-        double eps = 1e3; // Sécurité anti-division par zéro (1000 mètres minimum perçus)
+        // Sécurité anti-division par zéro (1000 mètres minimum perçus)
+        double eps = 1e3;
 
         Vector2D[] newAccelerations = new Vector2D[bodies.size()];
 
