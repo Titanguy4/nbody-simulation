@@ -1,57 +1,45 @@
 package com.titanguy.nbody.controllers;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.integration.annotation.ServiceActivator;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
-import com.titanguy.nbody.models.Body;
+import com.titanguy.nbody.controllers.dto.BodyDto;
+import com.titanguy.nbody.services.DuplicateBodyException;
 import com.titanguy.nbody.services.NBodyService;
 
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
 @Component
 @Slf4j
+@Validated
 public class NBodyController {
 
-    private final ObjectMapper objectMapper;
     private final NBodyService nBodyService;
 
-    public NBodyController(NBodyService nBodyService, ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public NBodyController(NBodyService nBodyService) {
         this.nBodyService = nBodyService;
     }
 
     @ServiceActivator(inputChannel = "simulationEventAdd")
-    public ResponseEntity<String> addBody(String bodyJson) {
+    public void addBody(@Payload @Valid BodyDto body) {
         try {
-            Body body = objectMapper.readValue(bodyJson, Body.class);
             this.nBodyService.addBody(body);
-        } catch (JacksonException e) {
-            log.error("Erreur de désérialisation du JSON pour l'ajout du corps : {}", e.getMessage(), e);
-            return ResponseEntity.status(400).body("Erreur de format JSON");
-        } catch (Exception e) {
-            log.error("Erreur inconnue lors de l'ajout d'un corp : {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Erreur interne");
+            log.info("Ajout avec succès du corps {}", body.toString());
+        } catch (DuplicateBodyException e) {
+            log.warn(e.getMessage());
         }
-
-        return ResponseEntity.status(200).body("Ajout succès");
     }
 
     @ServiceActivator(inputChannel = "simulationEventMove")
-    public ResponseEntity<String> moveBody(String bodyJson) {
+    public void moveBody(@Payload @Valid BodyDto body) {
         try {
-            Body body = objectMapper.readValue(bodyJson, Body.class);
             nBodyService.updateBody(body);
-        } catch (JacksonException e) {
-            log.error("Erreur de désérialisation du JSON pour movement du corps : {}", e.getMessage(), e);
-            return ResponseEntity.status(400).body("Erreur de format JSON");
-        } catch (Exception e) {
-            log.error("Erreur inconnue lors du movement d'un corp : {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Erreur interne");
+            log.info("Mise à jour du corps réussie : {}", body.toString());
+        } catch (IllegalArgumentException e) {
+            log.warn(e.getMessage());
         }
-
-        return ResponseEntity.status(200).body("Movement succès");
     }
 }

@@ -28,6 +28,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.integration:spring-integration-mqtt")
 	implementation("org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
 
 	// lombok
 	compileOnly("org.projectlombok:lombok")

@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: nbody
+    version: 0.0.1
+
+mqtt:
+  broker-url: tcp://localhost:1883
+  client-id: server
+  qos: 1
+  topic:
+    outgoing:
+      simulation: simulation
+    incoming:
+      simulation-event-add: simulation/event/add
+      simulation-event-move: simulation/event/move
+      simulation-event-delete: simulation/event/delete
+      simulation-event-pause: simulation/event/pause
+      simulation-preset: simulation/preset

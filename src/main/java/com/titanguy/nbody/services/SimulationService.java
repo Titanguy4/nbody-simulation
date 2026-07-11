@@ -19,18 +19,18 @@ import tools.jackson.databind.ObjectMapper;
 @Slf4j
 public class SimulationService {
 
-    private final NBodyService nBodyService;
-    private final MessageChannel mqttOutputChannel;
-
     private static final double G = 6.67430e-11;
     private static final long UPDATE_INTERVAL_MS = 100;
+
+    private final NBodyService nBodyService;
+    private final MessageChannel mqttOutputChannel;
 
     public SimulationService(NBodyService nBodyService, MessageChannel mqttOutputChannel) {
         this.nBodyService = nBodyService;
         this.mqttOutputChannel = mqttOutputChannel;
     }
 
-    @Scheduled(fixedRate = UPDATE_INTERVAL_MS)
+    @Scheduled(initialDelay = 2000, fixedRate = UPDATE_INTERVAL_MS)
     public void update() {
         List<Body> bodies = nBodyService.getBodies();
         double deltaTime = 1.0;
@@ -57,10 +57,11 @@ public class SimulationService {
             body.getPosition().add(body.getVelocity().multipleByScalar(deltaTime));
         }
         String jsonBodies = convertBodiesToJson(bodies);
-        log.info(jsonBodies);
+        log.debug(jsonBodies);
+
         Message<String> message = MessageBuilder.withPayload(jsonBodies).build();
         mqttOutputChannel.send(message);
-        log.info("Corps envoyé sur simulation topic");
+        log.debug("Corps envoyé sur simulation topic");
     }
 
     private String convertBodiesToJson(List<Body> bodies) {

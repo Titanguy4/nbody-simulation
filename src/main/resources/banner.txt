@@ -4,5 +4,5 @@
 / /\  /| |_) | (_) | (_| | |_| |
 \_\ \/ |_.__/ \___/ \__,_|\__, |
                           |___/ 
-${application.title} ${application.version}
+${spring.application.name} ${spring.application.version}
 Powered by Spring Boot ${spring-boot.version}
