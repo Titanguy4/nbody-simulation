@@ -29,16 +29,13 @@ public class SimulationService {
 
     private final NBodyService nBodyService;
     private final MessageChannel mqttOutputChannel;
-    private final MessageChannel pauseEventChannel;
 
     private final ThreadPoolTaskScheduler taskScheduler;
     private ScheduledFuture<?> scheduledTask;
 
-    public SimulationService(NBodyService nBodyService, MessageChannel mqttOutputChannel,
-            MessageChannel pauseEventChannel) {
+    public SimulationService(NBodyService nBodyService, MessageChannel mqttOutputChannel) {
         this.nBodyService = nBodyService;
         this.mqttOutputChannel = mqttOutputChannel;
-        this.pauseEventChannel = pauseEventChannel;
 
         this.taskScheduler = new ThreadPoolTaskScheduler();
         this.taskScheduler.setPoolSize(1);
@@ -78,6 +75,36 @@ public class SimulationService {
         } else {
             log.warn("Message non compréhensible lors de l'évènement pause");
 
+        }
+    }
+
+    @ServiceActivator(inputChannel = "presetChannel")
+    private void selectPreset(Message<String> message) {
+        Presets preset = new Presets(nBodyService);
+        String payload = message.getPayload().trim().toUpperCase();
+
+        switch (payload) {
+            case "SYSTEM_SOLAR":
+                preset.setSystemSolar();
+                break;
+            case "BINARY_SYSTEM":
+                preset.setBinarySystem();
+                break;
+            case "GALAXY_CLUSTER":
+                preset.setGalaxyCluster();
+                break;
+            case "GALAXY_COLLISION":
+                preset.setGalaxyCollision();
+                break;
+            case "PLANETARY_RING":
+                preset.setPlanetaryRing();
+                break;
+            case "SUPER_NOVA":
+                preset.setSuperNova();
+                break;
+            default:
+                preset.setSystemSolar();
+                break;
         }
     }
 

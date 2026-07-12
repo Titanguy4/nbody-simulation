@@ -103,6 +103,11 @@ public class MqttConfig {
         return new DirectChannel();
     }
 
+    @Bean
+    public MessageChannel presetChannel() {
+        return new DirectChannel();
+    }
+
     /** Receive add events from MQTT. */
     @Bean
     public Mqttv5PahoMessageDrivenChannelAdapter adapterAdd(Mqttv5ClientManager clientManager) {
@@ -155,6 +160,20 @@ public class MqttConfig {
         adapter.setMessageConverter(new StringMessageConverter());
         adapter.setErrorChannel(mqttErrorChannel());
         adapter.setOutputChannel(pauseEventChannel());
+
+        return adapter;
+    }
+
+    @Bean
+    public Mqttv5PahoMessageDrivenChannelAdapter adapterPreset(Mqttv5ClientManager clientManager) {
+        Mqttv5PahoMessageDrivenChannelAdapter adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager,
+                topicPreset);
+
+        adapter.setCompletionTimeout(5000);
+        adapter.setQos(qos);
+        adapter.setMessageConverter(new StringMessageConverter());
+        adapter.setErrorChannel(mqttErrorChannel());
+        adapter.setOutputChannel(presetChannel());
 
         return adapter;
     }

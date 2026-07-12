@@ -25,16 +25,16 @@
         Collision de Galaxies
       </button>
       <button class="preset-btn" data-preset="SUPER_NOVA">Supernova</button>
-      <button id="btn-clear" class="preset-btn btn-clear" title="Détruire l'Univers">
+      <button
+        id="btn-clear"
+        class="preset-btn btn-clear"
+        title="Détruire l'Univers"
+      >
         <i data-lucide="bomb" class="icon"></i>
       </button>
     </div>
 
-    <button
-      id="btn-toggle-sim"
-      class="icon-btn"
-      title="Mettre en Pause"
-    >
+    <button id="btn-toggle-sim" class="icon-btn" title="Mettre en Pause">
       <i data-lucide="pause" class="icon"></i>
     </button>
 
@@ -72,6 +72,8 @@
     </div>
 
     <canvas id="space"></canvas>
+
+    <div id="body-tooltip" class="hidden"></div>
 
     <script src="js/config.js"></script>
     <script src="js/mqtt-client.js"></script>

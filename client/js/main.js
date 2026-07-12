@@ -29,6 +29,14 @@ panel.onPresetSelect((presetName) => {
   renderer.clear();
 });
 
+renderer.canvas.addEventListener("mousemove", (event) => {
+  const hovered = renderer.getBodyAt(event.clientX, event.clientY);
+  if (hovered) panel.showTooltip(hovered, event.clientX, event.clientY);
+  else panel.hideTooltip();
+});
+
+renderer.canvas.addEventListener("mouseleave", () => panel.hideTooltip());
+
 renderer.canvas.addEventListener("click", (event) => {
   const position = renderer.screenToWorld(event.clientX, event.clientY);
   const form = panel.getFormValues();

@@ -6,6 +6,7 @@ class Renderer {
     this.ctx = canvas.getContext("2d");
     this.scale = 1;
     this.universeRadius = 8e11;
+    this.renderedBodies = [];
 
     window.addEventListener("resize", () => this.resize());
     this.resize();
@@ -90,6 +91,7 @@ class Renderer {
 
     const centerX = this.canvas.width / 2;
     const centerY = this.canvas.height / 2;
+    this.renderedBodies = [];
 
     bodies.forEach((body) => {
       const screenX = centerX + body.position.x * this.scale;
@@ -105,15 +107,34 @@ class Renderer {
 
       const bodyName = body.type.name || body.type;
       const isStar = bodyName === "Sun" || bodyName === "STAR";
-      const radius = isStar ? 6 : 2.5;
+      const radius = isStar ? 10 : 5;
 
       ctx.beginPath();
       ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
       ctx.fillStyle = COLORS[bodyName] || "#ffffff";
-      ctx.shadowBlur = isStar ? 15 : 0;
+      ctx.shadowBlur = isStar ? 20 : 6;
       ctx.shadowColor = ctx.fillStyle;
       ctx.fill();
+
+      this.renderedBodies.push({ body, screenX, screenY, radius });
     });
     this.drawScale();
+  }
+
+  // Finds the topmost body under (clientX, clientY), with a little extra
+  // hit-testing margin so small bodies stay easy to hover.
+  getBodyAt(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+
+    for (let i = this.renderedBodies.length - 1; i >= 0; i--) {
+      const { body, screenX, screenY, radius } = this.renderedBodies[i];
+      const hitRadius = Math.max(radius, 6) + 3;
+      const dx = x - screenX;
+      const dy = y - screenY;
+      if (dx * dx + dy * dy <= hitRadius * hitRadius) return body;
+    }
+    return null;
   }
 }
