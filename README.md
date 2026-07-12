@@ -106,9 +106,9 @@ Avant de commencer, assurez-vous d'avoir installé les éléments suivants :
    listener 9001
    protocol websockets
 
-2. Backend : Lancez l'application Spring Boot via votre IDE ou avec mvn spring-boot:run.
+2. Backend : Dans le dossier `api/`, lancez l'application Spring Boot via votre IDE ou avec `./gradlew bootRun`.
 
-3. Frontend : Ouvrez simplement le fichier index.html dans n'importe quel navigateur web moderne.
+3. Frontend : Ouvrez simplement le fichier `client/index.html` dans n'importe quel navigateur web moderne.
 
 ---
 
