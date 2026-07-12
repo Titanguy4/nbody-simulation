@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project overview
 
 A real-time N-body gravity simulation. The Spring Boot backend (`api/`) integrates Newtonian physics
-at a fixed tick rate and publishes universe state over MQTT; a static "dumb client" (`client/index.html`)
+at a fixed tick rate and publishes universe state over MQTT; a static "dumb client" (`client/`)
 subscribes over MQTT-over-WebSockets and renders bodies to an HTML5 canvas. There is no HTTP API between
 client and server — all communication is MQTT pub/sub, brokered by Mosquitto.
 
@@ -44,10 +44,9 @@ When adding a new inbound event type, the pattern is: new topic property in `app
 `DirectChannel` bean + adapter in `MqttConfig` → new `@ServiceActivator(inputChannel = "...")` method.
 
 Topics are configured in `api/src/main/resources/application.yml` under `mqtt.topic.*` and must stay in
-sync with the hardcoded topic constants at the top of `client/index.html`'s `<script>` block (e.g.
-`MQTT_TOPIC_ADD`, `MQTT_TOPIC_PRESET`). Note the client currently publishes clears to
-`simulation/event/clear`, which has no corresponding adapter/channel in `MqttConfig` — check this wiring
-before assuming a topic is handled.
+sync with the topic constants in `client/js/config.js` (e.g. `MQTT_TOPIC_ADD`, `MQTT_TOPIC_PRESET`). Note
+the client currently publishes clears to `simulation/event/clear`, which has no corresponding
+adapter/channel in `MqttConfig` — check this wiring before assuming a topic is handled.
 
 ### Simulation loop
 
@@ -78,7 +77,26 @@ warning rather than crashing the flow.
 
 ### Frontend
 
-`client/index.html` is a single self-contained file (markup, CSS, and JS inline) — no bundler, no
-package.json. It uses `mqtt.js` (loaded from CDN, not vendored) to connect directly to the Mosquitto
-WebSocket listener and both publishes user actions (click-to-add body, preset buttons, pause toggle,
-clear) and subscribes to the `simulation` topic to redraw the canvas on every published tick.
+`client/` is a bundler-free, dependency-free static site split by responsibility (not MVC — there's no
+persistent client-side domain model to justify it; state lives server-side and each MQTT tick is drawn
+straight through) and wired together with plain (non-module) `<script>` tags, in load order, from
+`client/index.html`:
+
+- `client/css/style.css` — all styling, extracted from the former inline `<style>` block.
+- `client/js/config.js` — MQTT topic/broker constants and body-type color map.
+- `client/js/mqtt-client.js` — **`MqttClient`**, the transport layer. Owns the `mqtt.js` connection
+  (loaded from CDN, not vendored) and play/pause state; exposes `addBody`/`clearUniverse`/`loadPreset`/
+  `togglePause` and `onConnect`/`onBodiesUpdate` callbacks. No DOM or canvas access.
+- `client/js/renderer.js` — **`Renderer`**, canvas rendering. Scale/zoom math, world↔screen conversion,
+  drawing bodies and the distance-scale bar.
+- `client/js/panel.js` — **`Panel`**, the side-panel DOM. Exposes `on*`/`get*`/`set*` methods
+  (`onToggle`, `onClear`, `onPresetSelect`, `getFormValues`, `setConnected`, `setBodyCount`,
+  `setPlaying`) rather than raw DOM nodes, so callers never reach into its internals.
+- `client/js/main.js` — wiring only: instantiates `MqttClient`/`Renderer`/`Panel` and connects their
+  callbacks/events to each other. This is the only file that knows about all three.
+
+Scripts are intentionally not ES modules: `client/index.html` is opened directly via `file://` (no
+build step, no local server required), and browsers block `type="module"` script loading under that
+scheme. Top-level `const`/`class` declarations in each classic script share the page's global scope, so
+later scripts (e.g. `main.js`) can reference earlier ones (e.g. `MqttClient`) without imports — keep the
+`<script>` load order in `index.html` (config → mqtt-client → renderer → panel → main) when adding files.

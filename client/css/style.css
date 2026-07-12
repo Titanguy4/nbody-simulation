@@ -1,0 +1,172 @@
+body {
+  margin: 0;
+  background-color: #050510;
+  color: #fff;
+  overflow: hidden;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+}
+canvas {
+  display: block;
+  cursor: crosshair;
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+
+/* Barre de scénarios (presets) - header minimaliste en haut de page */
+#preset-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(10, 10, 20, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.preset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: #bbb;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.preset-btn:hover {
+  background: rgba(75, 144, 255, 0.25);
+  color: #fff;
+}
+.preset-btn.btn-clear {
+  display: flex;
+  align-items: center;
+  color: #d98a9a;
+  border-color: rgba(255, 51, 102, 0.2);
+}
+.preset-btn.btn-clear:hover {
+  background: rgba(255, 51, 102, 0.2);
+  color: #fff;
+}
+.preset-btn.btn-clear .icon {
+  margin: 0;
+}
+
+/* Bouton pause/play - icône seule, sobre, en haut à droite */
+.icon-btn {
+  position: absolute;
+  top: 46px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  color: #ccc;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    color 0.15s;
+}
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.icon-btn .icon {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+}
+
+/* Panneau de création d'astre - petit et minimaliste, en haut à gauche */
+#create-panel {
+  position: absolute;
+  top: 46px;
+  left: 16px;
+  width: 160px;
+  background: rgba(20, 20, 40, 0.55);
+  border: 1px solid rgba(75, 144, 255, 0.2);
+  border-radius: 6px;
+  padding: 10px;
+  backdrop-filter: blur(4px);
+}
+#create-panel h4 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8fb4ff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#create-panel .form-group {
+  margin-bottom: 6px;
+}
+#create-panel label {
+  display: block;
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 2px;
+}
+#create-panel input,
+#create-panel select {
+  width: 100%;
+  padding: 3px 4px;
+  box-sizing: border-box;
+  background: #0a0a18;
+  border: 1px solid #444;
+  color: #ddd;
+  font-size: 11px;
+  border-radius: 3px;
+}
+#create-panel .row-inputs {
+  display: flex;
+  gap: 4px;
+}
+#create-panel .instruction {
+  font-size: 10px;
+  color: #6fae8f;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Barre de statut - discrète, en bas à droite */
+#info-bar {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: #888;
+  background: rgba(10, 10, 20, 0.45);
+  padding: 4px 10px;
+  border-radius: 20px;
+  pointer-events: none;
+}
+#status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#status.connected {
+  color: #6fae8f;
+}
+#status.disconnected {
+  color: #b06868;
+}

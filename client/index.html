@@ -3,140 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <title>N-Body Simulation - Interactive</title>
-    <style>
-      body {
-        margin: 0;
-        background-color: #050510;
-        color: #fff;
-        overflow: hidden;
-        font-family: "Segoe UI", Tahoma, sans-serif;
-      }
-      canvas {
-        display: block;
-        cursor: crosshair;
-      }
-
-      .panel {
-        position: absolute;
-        background: rgba(20, 20, 40, 0.8);
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid #4b90ff;
-        backdrop-filter: blur(4px);
-      }
-      #ui-layer {
-        top: 20px;
-        left: 20px;
-        pointer-events: none;
-      }
-
-      #form-layer {
-        top: 20px;
-        right: 20px;
-        width: 250px;
-      }
-      #form-layer h3 {
-        margin-top: 0;
-        color: #4b90ff;
-        font-size: 16px;
-        margin-bottom: 10px;
-      }
-      .form-group {
-        margin-bottom: 10px;
-      }
-      .form-group label {
-        display: block;
-        font-size: 12px;
-        margin-bottom: 3px;
-        color: #aaa;
-      }
-      .form-group input,
-      .form-group select {
-        width: 100%;
-        padding: 5px;
-        box-sizing: border-box;
-        background: #050510;
-        border: 1px solid #555;
-        color: white;
-      }
-      .instruction {
-        font-size: 12px;
-        color: #00ff88;
-        margin-top: 10px;
-        margin-bottom: 15px;
-        font-weight: bold;
-      }
-
-      .btn {
-        width: 100%;
-        background: #4b90ff;
-        color: white;
-        border: none;
-        padding: 8px;
-        margin-bottom: 5px;
-        cursor: pointer;
-        border-radius: 4px;
-        font-weight: bold;
-        transition: background-color 0.2s;
-      }
-      .btn:hover {
-        background: #3a7ce0;
-      }
-
-      /* Styles pour les boutons d'action spéciale */
-      .btn-danger {
-        background: #ff3366;
-        margin-top: 10px;
-      }
-      .btn-danger:hover {
-        background: #e02955;
-      }
-      .btn-pause {
-        background: #f39c12; /* Orange pour la pause */
-        font-size: 14px;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #f1c40f;
-      }
-      .btn-pause:hover {
-        background: #d68910;
-      }
-      .btn-play {
-        background: #27ae60; /* Vert pour le Play */
-        font-size: 14px;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #2ecc71;
-      }
-      .btn-play:hover {
-        background: #2ecc71;
-      }
-
-      #status {
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
-      .connected {
-        color: #00ff88;
-      }
-      .disconnected {
-        color: #ff3366;
-      }
-    </style>
+    <link rel="stylesheet" href="css/style.css" />
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   </head>
   <body>
-    <div id="ui-layer" class="panel">
-      <div id="status" class="disconnected">🔴 Déconnecté</div>
-      <div id="info">En attente...</div>
+    <div id="preset-bar">
+      <button class="preset-btn" data-preset="SOLAR_SYSTEM">
+        Système Solaire
+      </button>
+      <button class="preset-btn" data-preset="BINARY_SYSTEM">
+        Système Binaire
+      </button>
+      <button class="preset-btn" data-preset="PLANETARY_RING">
+        Anneau Planétaire
+      </button>
+      <button class="preset-btn" data-preset="GALAXY_CLUSTER">
+        Amas Galactique
+      </button>
+      <button class="preset-btn" data-preset="GALAXY_COLLISION">
+        Collision de Galaxies
+      </button>
+      <button class="preset-btn" data-preset="SUPER_NOVA">Supernova</button>
+      <button id="btn-clear" class="preset-btn btn-clear" title="Détruire l'Univers">
+        <i data-lucide="bomb" class="icon"></i>
+      </button>
     </div>
 
-    <div id="form-layer" class="panel">
-      <button id="btn-toggle-sim" class="btn btn-pause">
-        ⏸️ Mettre en Pause
-      </button>
+    <button
+      id="btn-toggle-sim"
+      class="icon-btn"
+      title="Mettre en Pause"
+    >
+      <i data-lucide="pause" class="icon"></i>
+    </button>
 
-      <h3>✨ Créer un Astre</h3>
+    <div id="create-panel">
+      <h4><i data-lucide="sparkles" class="icon"></i> Créer un Astre</h4>
       <div class="form-group">
         <select id="input-type">
           <option value="PLANET">Planète</option>
@@ -150,241 +53,30 @@
       </div>
       <div class="form-group">
         <label>Vitesse Initiale X & Y (m/s)</label>
-        <div style="display: flex; gap: 5px">
+        <div class="row-inputs">
           <input type="number" id="input-vx" value="0" placeholder="VX" />
           <input type="number" id="input-vy" value="25000" placeholder="VY" />
         </div>
       </div>
-      <div class="instruction">👆 Cliquez sur l'espace pour l'ajouter</div>
+      <div class="instruction">
+        <i data-lucide="mouse-pointer-click" class="icon"></i> Cliquez sur
+        l'espace pour l'ajouter
+      </div>
+    </div>
 
-      <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0" />
-
-      <h3>🌌 Scénarios (Presets)</h3>
-      <button class="btn preset-btn" data-preset="SOLAR_SYSTEM">
-        Système Solaire
-      </button>
-      <button class="btn preset-btn" data-preset="BINARY_SYSTEM">
-        Système Binaire
-      </button>
-      <button class="btn preset-btn" data-preset="PLANETARY_RING">
-        Anneau Planétaire
-      </button>
-      <button class="btn preset-btn" data-preset="GALAXY_CLUSTER">
-        Amas Galactique
-      </button>
-      <button class="btn preset-btn" data-preset="GALAXY_COLLISION">
-        Collision de Galaxies
-      </button>
-      <button class="btn preset-btn" data-preset="SUPER_NOVA">Supernova</button>
-
-      <button id="btn-clear" class="btn btn-danger">
-        💥 Détruire l'Univers
-      </button>
+    <div id="info-bar">
+      <span id="status" class="disconnected">
+        <i data-lucide="wifi-off" class="icon"></i> Déconnecté
+      </span>
+      <span id="info">En attente...</span>
     </div>
 
     <canvas id="space"></canvas>
 
-    <script>
-      const MQTT_BROKER_URL = "ws://localhost:9001";
-      const MQTT_TOPIC_IN = "simulation";
-      const MQTT_TOPIC_ADD = "simulation/event/add";
-      const MQTT_TOPIC_CLEAR = "simulation/event/clear";
-      const MQTT_TOPIC_PRESET = "simulation/preset";
-      const MQTT_TOPIC_PAUSE = "simulation/event/pause"; // Nouveau topic pour la pause
-
-      let currentUniverseRadius = 8e11;
-      let isPlaying = true; // État local de la simulation
-
-      const COLORS = {
-        Sun: "#ffcc00",
-        Mercury: "#a8a8a8",
-        Venus: "#e08f46",
-        Earth: "#4b90ff",
-        Mars: "#ff4a2b",
-        Jupiter: "#cda67d",
-        Saturn: "#e2ddaa",
-        Uranus: "#82d1ff",
-        Neptune: "#3e54e8",
-        PLANET: "#00ff88",
-        STAR: "#ff4444",
-        ASTEROID: "#aaaaaa",
-      };
-
-      const canvas = document.getElementById("space");
-      const ctx = canvas.getContext("2d");
-      let scale = 1;
-
-      function calculateScale() {
-        scale =
-          Math.min(canvas.width, canvas.height) / (2 * currentUniverseRadius);
-      }
-
-      function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        calculateScale();
-      }
-      window.addEventListener("resize", resizeCanvas);
-      resizeCanvas();
-
-      window.addEventListener("wheel", (event) => {
-        if (event.deltaY < 0) currentUniverseRadius *= 0.8;
-        else currentUniverseRadius *= 1.25;
-        calculateScale();
-        ctx.fillStyle = "#050510";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      });
-
-      // --- CONNEXION MQTT ---
-      const statusDiv = document.getElementById("status");
-      const infoDiv = document.getElementById("info");
-      const client = mqtt.connect(MQTT_BROKER_URL);
-
-      client.on("connect", () => {
-        statusDiv.innerText = "🟢 Connecté en direct";
-        statusDiv.className = "connected";
-        client.subscribe(MQTT_TOPIC_IN);
-      });
-
-      // --- LOGIQUE BOUTON PLAY/PAUSE ---
-      const toggleBtn = document.getElementById("btn-toggle-sim");
-
-      toggleBtn.addEventListener("click", () => {
-        if (isPlaying) {
-          // Si ça tourne, on met en pause
-          client.publish(MQTT_TOPIC_PAUSE, "STOP");
-          toggleBtn.className = "btn btn-play";
-          toggleBtn.innerHTML = "▶️ Reprendre";
-        } else {
-          // Si c'est en pause, on relance
-          client.publish(MQTT_TOPIC_PAUSE, "PLAY");
-          toggleBtn.className = "btn btn-pause";
-          toggleBtn.innerHTML = "⏸️ Mettre en Pause";
-        }
-        isPlaying = !isPlaying; // On inverse l'état
-      });
-
-      // --- ENVOI DES ÉVÉNEMENTS ---
-      canvas.addEventListener("click", (event) => {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        const newBodyDto = {
-          id: Math.floor(Math.random() * 1000000),
-          type: { name: document.getElementById("input-type").value },
-          mass: parseFloat(document.getElementById("input-mass").value),
-          position: {
-            x: (event.clientX - centerX) / scale,
-            y: (event.clientY - centerY) / scale,
-          },
-          velocity: {
-            x: parseFloat(document.getElementById("input-vx").value),
-            y: parseFloat(document.getElementById("input-vy").value),
-          },
-          acceleration: { x: 0.0, y: 0.0 },
-        };
-        client.publish(MQTT_TOPIC_ADD, JSON.stringify(newBodyDto));
-      });
-
-      document.getElementById("btn-clear").addEventListener("click", () => {
-        client.publish(MQTT_TOPIC_CLEAR, "{}");
-        ctx.fillStyle = "#050510";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      });
-
-      document.querySelectorAll(".preset-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          const presetName = e.target.getAttribute("data-preset");
-          client.publish(MQTT_TOPIC_PRESET, presetName);
-          ctx.fillStyle = "#050510";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        });
-      });
-
-      // --- RÉCEPTION DES DONNÉES ---
-      client.on("message", (topic, message) => {
-        if (topic === MQTT_TOPIC_IN) {
-          try {
-            const bodies = JSON.parse(message.toString());
-            infoDiv.innerText = bodies.length + " corps célestes en orbite";
-            drawUniverse(bodies);
-          } catch (e) {
-            console.error("Erreur MQTT :", e);
-          }
-        }
-      });
-
-      // --- MOTEUR DE RENDU ---
-      function drawScale() {
-        const targetMeters = 150 / scale;
-        const exponent = Math.floor(Math.log10(targetMeters));
-        const fraction = targetMeters / Math.pow(10, exponent);
-        let niceFraction = fraction >= 5 ? 5 : fraction >= 2 ? 2 : 1;
-
-        const niceMeters = niceFraction * Math.pow(10, exponent);
-        const barWidth = niceMeters * scale;
-
-        let text = "";
-        const km = niceMeters / 1000;
-        if (km >= 1e9) text = (km / 1e9).toFixed(0) + " milliards km";
-        else if (km >= 1e6) text = (km / 1e6).toFixed(0) + " millions km";
-        else text = km.toLocaleString() + " km";
-
-        const au = niceMeters / 1.496e11;
-        if (au >= 0.1)
-          text += `  (~${au >= 10 ? au.toFixed(0) : au.toFixed(2)} UA)`;
-
-        const x = 20,
-          y = canvas.height - 30;
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + barWidth, y);
-        ctx.moveTo(x, y - 5);
-        ctx.lineTo(x, y + 5);
-        ctx.moveTo(x + barWidth, y - 5);
-        ctx.lineTo(x + barWidth, y + 5);
-        ctx.stroke();
-
-        ctx.font = "12px sans-serif";
-        ctx.shadowBlur = 0;
-        ctx.fillText(text, x, y - 10);
-      }
-
-      function drawUniverse(bodies) {
-        ctx.fillStyle = "rgba(5, 5, 16, 0.3)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        bodies.forEach((body) => {
-          const screenX = centerX + body.position.x * scale;
-          const screenY = centerY + body.position.y * scale;
-
-          if (
-            screenX < 0 ||
-            screenX > canvas.width ||
-            screenY < 0 ||
-            screenY > canvas.height
-          )
-            return;
-
-          const bodyName = body.type.name || body.type;
-          const isStar = bodyName === "Sun" || bodyName === "STAR";
-          const radius = isStar ? 6 : 2.5;
-
-          ctx.beginPath();
-          ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
-          ctx.fillStyle = COLORS[bodyName] || "#ffffff";
-          ctx.shadowBlur = isStar ? 15 : 0;
-          ctx.shadowColor = ctx.fillStyle;
-          ctx.fill();
-        });
-        drawScale();
-      }
-    </script>
+    <script src="js/config.js"></script>
+    <script src="js/mqtt-client.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/panel.js"></script>
+    <script src="js/main.js"></script>
   </body>
 </html>
