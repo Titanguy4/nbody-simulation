@@ -1,13 +1,39 @@
-version: '3.8'
-
 services:
   mosquitto:
-    image: eclipse-mosquitto:latest
-    container_name: mosquitto
+    image: eclipse-mosquitto:2
+    container_name: nbody-mosquitto
+    restart: unless-stopped
     ports:
-      - "1883:1883"
+      # 9001 (WebSockets) doit être accessible depuis les navigateurs.
+      # 1883 reste interne au réseau Docker (l'API y accède via "mosquitto:1883").
       - "9001:9001"
     volumes:
-      - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
+      - ./api/mosquitto/config:/mosquitto/config:ro
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    container_name: nbody-api
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER_URL: tcp://mosquitto:1883
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    container_name: nbody-client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  mosquitto-data:

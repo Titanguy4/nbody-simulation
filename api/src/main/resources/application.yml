@@ -4,7 +4,7 @@ spring:
     version: 0.0.1
 
 mqtt:
-  broker-url: tcp://localhost:1883
+  broker-url: ${MQTT_BROKER_URL:tcp://localhost:1883}
   client-id: server
   qos: 1
   topic:

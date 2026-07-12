@@ -98,6 +98,16 @@ public class MqttConfig {
         return new DirectChannel();
     }
 
+    @Bean
+    public MessageChannel pauseEventChannel() {
+        return new DirectChannel();
+    }
+
+    @Bean
+    public MessageChannel presetChannel() {
+        return new DirectChannel();
+    }
+
     /** Receive add events from MQTT. */
     @Bean
     public Mqttv5PahoMessageDrivenChannelAdapter adapterAdd(Mqttv5ClientManager clientManager) {
@@ -138,6 +148,34 @@ public class MqttConfig {
     @Transformer(inputChannel = "simulationEventMoveRaw", outputChannel = "simulationEventMove")
     public JsonToObjectTransformer jsonToBodyDtoMoveTransformer() {
         return new JsonToObjectTransformer(BodyDto.class);
+    }
+
+    @Bean
+    public Mqttv5PahoMessageDrivenChannelAdapter adapterPause(Mqttv5ClientManager clientManager) {
+        Mqttv5PahoMessageDrivenChannelAdapter adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager,
+                topicEventPause);
+
+        adapter.setCompletionTimeout(5000);
+        adapter.setQos(qos);
+        adapter.setMessageConverter(new StringMessageConverter());
+        adapter.setErrorChannel(mqttErrorChannel());
+        adapter.setOutputChannel(pauseEventChannel());
+
+        return adapter;
+    }
+
+    @Bean
+    public Mqttv5PahoMessageDrivenChannelAdapter adapterPreset(Mqttv5ClientManager clientManager) {
+        Mqttv5PahoMessageDrivenChannelAdapter adapter = new Mqttv5PahoMessageDrivenChannelAdapter(clientManager,
+                topicPreset);
+
+        adapter.setCompletionTimeout(5000);
+        adapter.setQos(qos);
+        adapter.setMessageConverter(new StringMessageConverter());
+        adapter.setErrorChannel(mqttErrorChannel());
+        adapter.setOutputChannel(presetChannel());
+
+        return adapter;
     }
 
     /** Send outgoing simulation messages to MQTT. */
