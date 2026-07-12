@@ -77,16 +77,39 @@
         cursor: pointer;
         border-radius: 4px;
         font-weight: bold;
+        transition: background-color 0.2s;
       }
       .btn:hover {
         background: #3a7ce0;
       }
+
+      /* Styles pour les boutons d'action spéciale */
       .btn-danger {
         background: #ff3366;
         margin-top: 10px;
       }
       .btn-danger:hover {
         background: #e02955;
+      }
+      .btn-pause {
+        background: #f39c12; /* Orange pour la pause */
+        font-size: 14px;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #f1c40f;
+      }
+      .btn-pause:hover {
+        background: #d68910;
+      }
+      .btn-play {
+        background: #27ae60; /* Vert pour le Play */
+        font-size: 14px;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #2ecc71;
+      }
+      .btn-play:hover {
+        background: #2ecc71;
       }
 
       #status {
@@ -109,6 +132,10 @@
     </div>
 
     <div id="form-layer" class="panel">
+      <button id="btn-toggle-sim" class="btn btn-pause">
+        ⏸️ Mettre en Pause
+      </button>
+
       <h3>✨ Créer un Astre</h3>
       <div class="form-group">
         <select id="input-type">
@@ -163,8 +190,10 @@
       const MQTT_TOPIC_ADD = "simulation/event/add";
       const MQTT_TOPIC_CLEAR = "simulation/event/clear";
       const MQTT_TOPIC_PRESET = "simulation/preset";
+      const MQTT_TOPIC_PAUSE = "simulation/event/pause"; // Nouveau topic pour la pause
 
       let currentUniverseRadius = 8e11;
+      let isPlaying = true; // État local de la simulation
 
       const COLORS = {
         Sun: "#ffcc00",
@@ -217,6 +246,24 @@
         client.subscribe(MQTT_TOPIC_IN);
       });
 
+      // --- LOGIQUE BOUTON PLAY/PAUSE ---
+      const toggleBtn = document.getElementById("btn-toggle-sim");
+
+      toggleBtn.addEventListener("click", () => {
+        if (isPlaying) {
+          // Si ça tourne, on met en pause
+          client.publish(MQTT_TOPIC_PAUSE, "STOP");
+          toggleBtn.className = "btn btn-play";
+          toggleBtn.innerHTML = "▶️ Reprendre";
+        } else {
+          // Si c'est en pause, on relance
+          client.publish(MQTT_TOPIC_PAUSE, "PLAY");
+          toggleBtn.className = "btn btn-pause";
+          toggleBtn.innerHTML = "⏸️ Mettre en Pause";
+        }
+        isPlaying = !isPlaying; // On inverse l'état
+      });
+
       // --- ENVOI DES ÉVÉNEMENTS ---
       canvas.addEventListener("click", (event) => {
         const centerX = canvas.width / 2;
@@ -241,7 +288,7 @@
 
       document.getElementById("btn-clear").addEventListener("click", () => {
         client.publish(MQTT_TOPIC_CLEAR, "{}");
-        ctx.fillStyle = "#050510"; // Efface l'écran direct
+        ctx.fillStyle = "#050510";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       });
 
@@ -249,7 +296,7 @@
         btn.addEventListener("click", (e) => {
           const presetName = e.target.getAttribute("data-preset");
           client.publish(MQTT_TOPIC_PRESET, presetName);
-          ctx.fillStyle = "#050510"; // Efface l'écran direct
+          ctx.fillStyle = "#050510";
           ctx.fillRect(0, 0, canvas.width, canvas.height);
         });
       });

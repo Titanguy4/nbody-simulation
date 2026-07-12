@@ -1,11 +1,14 @@
 package com.titanguy.nbody.services;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 
+import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import com.titanguy.nbody.configs.Presets;
@@ -26,32 +29,69 @@ public class SimulationService {
 
     private final NBodyService nBodyService;
     private final MessageChannel mqttOutputChannel;
+    private final MessageChannel pauseEventChannel;
 
-    public SimulationService(NBodyService nBodyService, MessageChannel mqttOutputChannel) {
+    private final ThreadPoolTaskScheduler taskScheduler;
+    private ScheduledFuture<?> scheduledTask;
+
+    public SimulationService(NBodyService nBodyService, MessageChannel mqttOutputChannel,
+            MessageChannel pauseEventChannel) {
         this.nBodyService = nBodyService;
         this.mqttOutputChannel = mqttOutputChannel;
+        this.pauseEventChannel = pauseEventChannel;
+
+        this.taskScheduler = new ThreadPoolTaskScheduler();
+        this.taskScheduler.setPoolSize(1);
+        this.taskScheduler.setThreadNamePrefix("Nbody-Cluster-");
+        this.taskScheduler.initialize();
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         Presets preset = new Presets(nBodyService);
         preset.setSystemSolar();
+        startSimulation(Instant.now().plusSeconds(2));
 
         log.info("SimulationService initialized with system solar bodies.");
     }
 
-    @Scheduled(initialDelay = 2000, fixedRate = UPDATE_INTERVAL_MS)
-    public void update() {
+    private synchronized void startSimulation(Instant startTime) {
+        if (this.scheduledTask == null || this.scheduledTask.isCancelled()) {
+
+            this.scheduledTask = this.taskScheduler.scheduleAtFixedRate(
+                    this::update,
+                    startTime,
+                    java.time.Duration.ofMillis(UPDATE_INTERVAL_MS));
+        }
+    }
+
+    @ServiceActivator(inputChannel = "pauseEventChannel")
+    private synchronized void toggleRunningSimulation(Message<String> message) {
+        String payload = message.getPayload().trim().toUpperCase();
+
+        if (payload.equals("PLAY")) {
+            startSimulation(Instant.now());
+        } else if (payload.equals("STOP")) {
+            if (this.scheduledTask != null && !this.scheduledTask.isCancelled()) {
+                this.scheduledTask.cancel(false);
+            }
+        } else {
+            log.warn("Message non compréhensible lors de l'évènement pause");
+
+        }
+    }
+
+    private void update() {
         List<Body> bodies = nBodyService.getBodies();
 
-        // 🕒 1 heure par calcul (3600s) au lieu d'une journée. Plus stable !
-        double deltaTime = 86400.0;
-        // Sécurité anti-division par zéro (1000 mètres minimum perçus)
+        // Virtual time, time is elapsing during UPDATE_INTERVAL_MS. Here 24 * 60 * 60,
+        // 12 hours
+        double deltaTime = 43200.0;
+        // Plummer softening, to avoid divided by 0 when colision
         double eps = 1e3;
 
         Vector2D[] newAccelerations = new Vector2D[bodies.size()];
 
-        // 1. Calcul des forces (sans toucher aux positions !)
         for (int i = 0; i < bodies.size(); i++) {
             Body body = bodies.get(i);
             Vector2D force = new Vector2D(0, 0);
@@ -62,7 +102,6 @@ public class SimulationService {
                     double distance = coordinateVector.distance();
 
                     if (distance > 0) {
-                        // ✅ Sécurité : on ajoute 'eps' pour éviter l'explosion si d approche 0
                         double forceValue = G * body.getMass() * other.getMass() / ((distance * distance) + eps);
                         Vector2D forceVector = coordinateVector.normalize().multipleByScalar(forceValue);
                         force = force.add(forceVector);
@@ -72,7 +111,6 @@ public class SimulationService {
             newAccelerations[i] = force.multipleByScalar(1 / body.getMass());
         }
 
-        // 2. Application des mouvements
         for (int i = 0; i < bodies.size(); i++) {
             Body body = bodies.get(i);
             Vector2D acceleration = newAccelerations[i];
