@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbody-api
+  namespace: nbody
+spec:
+  # Une seule instance obligatoirement : l'état de la simulation vit en
+  # mémoire et chaque replica publierait sa propre simulation sur MQTT.
+  replicas: 1
+  # Recreate : évite qu'ancien et nouveau pod publient en même temps
+  # pendant un déploiement.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nbody-api
+  template:
+    metadata:
+      labels:
+        app: nbody-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/Titanguy4/nbody-api:0.2.0
+          env:
+            - name: MQTT_BROKER_URL
+              value: tcp://mosquitto:1883
+          # Pas d'actuator dans le projet : on sonde le port Tomcat.
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              memory: 512Mi

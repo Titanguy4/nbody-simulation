@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mosquitto-config
+  namespace: nbody
+data:
+  mosquitto.conf: |
+    persistence true
+    persistence_location /mosquitto/data/
+
+    listener 1883
+    allow_anonymous true
+
+    listener 9001
+    protocol websockets
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mosquitto-data
+  namespace: nbody
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mosquitto
+  namespace: nbody
+spec:
+  replicas: 1
+  # Recreate : le PVC local-path est ReadWriteOnce, deux pods ne peuvent
+  # pas le monter en même temps pendant un rolling update.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mosquitto
+  template:
+    metadata:
+      labels:
+        app: mosquitto
+    spec:
+      containers:
+        - name: mosquitto
+          image: eclipse-mosquitto:2
+          ports:
+            - name: mqtt
+              containerPort: 1883
+            - name: websockets
+              containerPort: 9001
+          volumeMounts:
+            - name: config
+              mountPath: /mosquitto/config
+              readOnly: true
+            - name: data
+              mountPath: /mosquitto/data
+          readinessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: mqtt
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: mosquitto-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: mosquitto-data
+---
+# Service interne : l'API s'y connecte via tcp://mosquitto:1883
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto
+  namespace: nbody
+spec:
+  selector:
+    app: mosquitto
+  ports:
+    - name: mqtt
+      port: 1883
+      targetPort: mqtt
+---
+# Service externe : expose le WebSocket sur le port 9001 de l'IP du VPS
+# (ServiceLB de k3s binde le port directement sur le nœud).
+apiVersion: v1
+kind: Service
+metadata:
+  name: mosquitto-websockets
+  namespace: nbody
+spec:
+  type: LoadBalancer
+  selector:
+    app: mosquitto
+  ports:
+    - name: websockets
+      port: 9001
+      targetPort: websockets

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nbody-client
+  namespace: nbody
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nbody-client
+  template:
+    metadata:
+      labels:
+        app: nbody-client
+    spec:
+      containers:
+        - name: client
+          image: ghcr.io/Titanguy4/nbody-client:0.2.0
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nbody-client
+  namespace: nbody
+spec:
+  selector:
+    app: nbody-client
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
