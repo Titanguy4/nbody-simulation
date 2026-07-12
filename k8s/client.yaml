@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: client
-          image: ghcr.io/titanguy4/nbody-client:0.2.0
+          image: ghcr.io/titanguy4/nbody-client:0.0.2
           ports:
             - name: http
               containerPort: 80
