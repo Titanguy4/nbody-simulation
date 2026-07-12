@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/Titanguy4/nbody-api:0.2.0
+          image: ghcr.io/titanguy4/nbody-api:0.2.0
           env:
             - name: MQTT_BROKER_URL
               value: tcp://mosquitto:1883
