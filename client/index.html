@@ -2,6 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>N-Body Simulation - Interactive</title>
     <link rel="stylesheet" href="css/style.css" />
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -38,8 +39,8 @@
       <i data-lucide="pause" class="icon"></i>
     </button>
 
-    <div id="create-panel">
-      <h4><i data-lucide="sparkles" class="icon"></i> Créer un Astre</h4>
+    <details id="create-panel" open>
+      <summary><i data-lucide="sparkles" class="icon"></i> Créer un Astre</summary>
       <div class="form-group">
         <select id="input-type">
           <option value="PLANET">Planète</option>
@@ -62,7 +63,7 @@
         <i data-lucide="mouse-pointer-click" class="icon"></i> Cliquez sur
         l'espace pour l'ajouter
       </div>
-    </div>
+    </details>
 
     <div id="info-bar">
       <span id="status" class="disconnected">
