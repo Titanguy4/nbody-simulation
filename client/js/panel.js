@@ -9,6 +9,12 @@ class Panel {
     this.clearBtn = document.getElementById("btn-clear");
     this.presetBtns = document.querySelectorAll(".preset-btn[data-preset]");
     this.tooltip = document.getElementById("body-tooltip");
+    this.createPanel = document.getElementById("create-panel");
+
+    // On small screens the create panel starts collapsed: opened, it
+    // would cover half the canvas.
+    if (window.matchMedia("(max-width: 600px)").matches)
+      this.createPanel.removeAttribute("open");
   }
 
   setConnected() {

@@ -25,8 +25,12 @@ class Renderer {
   }
 
   zoom(deltaY) {
-    if (deltaY < 0) this.universeRadius *= 0.8;
-    else this.universeRadius *= 1.25;
+    this.zoomBy(deltaY < 0 ? 1.25 : 0.8);
+  }
+
+  // factor > 1 zooms in, < 1 zooms out. Used by wheel and pinch gestures.
+  zoomBy(factor) {
+    this.universeRadius /= factor;
     this.calculateScale();
     this.clear();
   }

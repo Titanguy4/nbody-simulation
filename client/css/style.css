@@ -8,6 +8,9 @@ body {
 canvas {
   display: block;
   cursor: crosshair;
+  /* Gestes tactiles gérés en JS (pinch-to-zoom) : on désactive ceux du
+     navigateur (scroll, double-tap zoom, pull-to-refresh). */
+  touch-action: none;
 }
 
 .icon {
@@ -102,14 +105,23 @@ canvas {
   padding: 10px;
   backdrop-filter: blur(4px);
 }
-#create-panel h4 {
-  margin: 0 0 8px 0;
+#create-panel summary {
   font-size: 11px;
   font-weight: 600;
   color: #8fb4ff;
   display: flex;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#create-panel summary::-webkit-details-marker {
+  display: none;
+}
+#create-panel[open] summary {
+  margin-bottom: 8px;
 }
 #create-panel .form-group {
   margin-bottom: 6px;
@@ -204,4 +216,43 @@ canvas {
 }
 #body-tooltip .tooltip-row span:last-child {
   color: #ddd;
+}
+
+/* Mobile : barre de presets scrollable horizontalement, cibles tactiles
+   plus grandes. Le desktop n'est pas affecté. */
+@media (max-width: 600px) {
+  #preset-bar {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  #preset-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .preset-btn {
+    flex: 0 0 auto;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .icon-btn {
+    top: 56px;
+    width: 40px;
+    height: 40px;
+  }
+  #create-panel {
+    top: 56px;
+    width: 190px;
+  }
+  /* 16px minimum : en dessous, iOS zoome la page au focus d'un champ. */
+  #create-panel input,
+  #create-panel select {
+    font-size: 16px;
+    padding: 6px;
+  }
+  #info-bar {
+    left: 12px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
 }
