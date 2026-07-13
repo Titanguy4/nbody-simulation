@@ -15,7 +15,10 @@ spec:
     spec:
       containers:
         - name: client
-          image: ghcr.io/titanguy4/nbody-client:0.0.2
+          # latest = dernière image poussée par la CI (qui déploie par SHA via
+          # kubectl set image) : un re-apply du manifest ne rétrograde jamais.
+          image: ghcr.io/titanguy4/nbody-client:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 80

@@ -21,7 +21,10 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/titanguy4/nbody-api:0.0.3
+          # latest = dernière image poussée par la CI (qui déploie par SHA via
+          # kubectl set image) : un re-apply du manifest ne rétrograde jamais.
+          image: ghcr.io/titanguy4/nbody-api:latest
+          imagePullPolicy: Always
           env:
             - name: MQTT_BROKER_URL
               value: tcp://mosquitto:1883
