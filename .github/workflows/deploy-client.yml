@@ -49,5 +49,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            export KUBECONFIG="$HOME/.kube/config"
             kubectl set image deployment/nbody-client client=ghcr.io/titanguy4/nbody-client:${{ github.sha }} -n nbody
             kubectl rollout status deployment/nbody-client -n nbody --timeout=120s
