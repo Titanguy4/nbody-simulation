@@ -36,3 +36,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Client (TypeScript) ###
+client/node_modules/
+# Sortie du build Vite — ne jamais l'éditer ni la commiter
+client/dist/

@@ -23,7 +23,12 @@ All backend commands run from `api/`.
 - Run all tests: `./gradlew test`
 - Run a single test class: `./gradlew test --tests "com.titanguy.nbody.SomeTest"`
 
-Frontend: open `client/index.html` directly in a browser (no build step, no dependencies to install).
+Frontend (from `client/`, requires [bun](https://bun.sh)):
+
+- Install dev dependencies (TypeScript + Vite): `bun install`
+- Dev server with hot reload: `bun run dev` (serves on the Vite default port)
+- Production build (type-check via `tsc --noEmit`, then Vite bundle to `dist/`): `bun run build`
+- Type-check only: `bun run typecheck`; preview the built bundle: `bun run preview`
 
 Broker: `docker-compose up` from `api/` starts Mosquitto with WebSocket support enabled (ports 1883 and
 9001), using `api/mosquitto/config/mosquitto.conf`.
@@ -44,7 +49,7 @@ When adding a new inbound event type, the pattern is: new topic property in `app
 `DirectChannel` bean + adapter in `MqttConfig` → new `@ServiceActivator(inputChannel = "...")` method.
 
 Topics are configured in `api/src/main/resources/application.yml` under `mqtt.topic.*` and must stay in
-sync with the topic constants in `client/js/config.js` (e.g. `MQTT_TOPIC_ADD`, `MQTT_TOPIC_PRESET`). Note
+sync with the topic constants in `client/src/config.ts` (e.g. `MQTT_TOPIC_ADD`, `MQTT_TOPIC_PRESET`). Note
 the client currently publishes clears to `simulation/event/clear`, which has no corresponding
 adapter/channel in `MqttConfig` — check this wiring before assuming a topic is handled.
 
@@ -77,26 +82,37 @@ warning rather than crashing the flow.
 
 ### Frontend
 
-`client/` is a bundler-free, dependency-free static site split by responsibility (not MVC — there's no
-persistent client-side domain model to justify it; state lives server-side and each MQTT tick is drawn
-straight through) and wired together with plain (non-module) `<script>` tags, in load order, from
-`client/index.html`:
+`client/` is a TypeScript + Vite static site with no runtime dependencies: `index.html` references
+`src/main.ts` directly and Vite serves it in dev (`bun run dev`, with HMR) or bundles it for prod
+(`bun run build` → `client/dist/`, gitignored generated output — never edit it by hand). TypeScript
+is strict-mode, type-checked by `tsc --noEmit` as part of the build. `mqtt` and `lucide` are regular
+npm dependencies bundled by Vite (no CDN); lucide icons are registered one by one in `src/icons.ts`
+so unused icons tree-shake away — add new icons there when adding `data-lucide` markup.
 
-- `client/css/style.css` — all styling, extracted from the former inline `<style>` block.
-- `client/js/config.js` — MQTT topic/broker constants and body-type color map.
-- `client/js/mqtt-client.js` — **`MqttClient`**, the transport layer. Owns the `mqtt.js` connection
-  (loaded from CDN, not vendored) and play/pause state; exposes `addBody`/`clearUniverse`/`loadPreset`/
-  `togglePause` and `onConnect`/`onBodiesUpdate` callbacks. No DOM or canvas access.
-- `client/js/renderer.js` — **`Renderer`**, canvas rendering. Scale/zoom math, world↔screen conversion,
-  drawing bodies and the distance-scale bar.
-- `client/js/panel.js` — **`Panel`**, the side-panel DOM. Exposes `on*`/`get*`/`set*` methods
-  (`onToggle`, `onClear`, `onPresetSelect`, `getFormValues`, `setConnected`, `setBodyCount`,
-  `setPlaying`) rather than raw DOM nodes, so callers never reach into its internals.
-- `client/js/main.js` — wiring only: instantiates `MqttClient`/`Renderer`/`Panel` and connects their
-  callbacks/events to each other. This is the only file that knows about all three.
+Modules under `client/src/`, wired by explicit extensionless imports (`moduleResolution: bundler`):
 
-Scripts are intentionally not ES modules: `client/index.html` is opened directly via `file://` (no
-build step, no local server required), and browsers block `type="module"` script loading under that
-scheme. Top-level `const`/`class` declarations in each classic script share the page's global scope, so
-later scripts (e.g. `main.js`) can reference earlier ones (e.g. `MqttClient`) without imports — keep the
-`<script>` load order in `index.html` (config → mqtt-client → renderer → panel → main) when adding files.
+- `types.ts` — shared domain types (`Body`, `Vec2`) and the `bodyTypeName` helper (the backend
+  serializes `type` as an object but it may degrade to a plain string).
+- `config.ts` — MQTT topic/broker constants and body-type color map. Topics must stay in sync with
+  `application.yml` on the API side.
+- `format.ts` — display formatting for masses, distances and speeds.
+- `icons.ts` — registers the lucide icons used by the UI (`refreshIcons()`, called after injecting
+  `data-lucide` markup).
+- `mqtt-client.ts` — **`MqttClient`**, the transport layer. Owns the `mqtt.js` connection and
+  play/pause state; exposes `addBody`/`clearUniverse`/`loadPreset`/`togglePause` and
+  `onConnect`/`onBodiesUpdate` callbacks. No DOM or canvas access.
+- `viewport.ts` — **`Viewport`**, pure view math: zoom level, view center (moves when zooming toward
+  a pivot so the point under the cursor stays put) and world↔screen conversions. No drawing.
+- `aim-overlay.ts` — draws the launch arrow shown while press-dragging a new body.
+- `renderer.ts` — **`Renderer`**, canvas drawing (bodies, distance-scale bar, aim overlay); owns the
+  `Viewport` (exposed as `renderer.viewport`) and keeps the last drawn frame for redraws.
+- `panel.ts` — **`Panel`**, the side-panel DOM. Exposes `on*`/`get*`/`set*` methods rather than raw
+  DOM nodes, so callers never reach into its internals.
+- `interactions.ts` — all canvas input: plain click adds a static body, press-and-drag aims a launch
+  arrow (direction = velocity vector, length = magnitude, 150 m/s per pixel), click/tap on a body
+  shows its tooltip, wheel and two-finger pinch zoom toward the pointer.
+- `main.ts` — wiring only: instantiates the components and connects their callbacks. This is the only
+  file that knows about all of them.
+
+The client Docker image builds in two stages: `oven/bun` runs the Vite build, then `nginx:alpine`
+serves the resulting `dist/`.

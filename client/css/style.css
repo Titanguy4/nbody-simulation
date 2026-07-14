@@ -6,10 +6,18 @@ body {
   font-family: "Segoe UI", Tahoma, sans-serif;
 }
 canvas {
+  /* Hors du flux : le document ne peut jamais dépasser le viewport,
+     donc aucune scrollbar possible. z-index négatif : le canvas est
+     positionné et déclaré en dernier dans le DOM, sans ça il peindrait
+     par-dessus tous les overlays. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
   display: block;
   cursor: crosshair;
-  /* Gestes tactiles gérés en JS (pinch-to-zoom) : on désactive ceux du
-     navigateur (scroll, double-tap zoom, pull-to-refresh). */
+  /* Gestes tactiles gérés en JS (visée, pinch-to-zoom) : on désactive
+     ceux du navigateur (scroll, double-tap zoom, pull-to-refresh). */
   touch-action: none;
 }
 
@@ -94,21 +102,22 @@ canvas {
 }
 
 /* Panneau de création d'astre - petit et minimaliste, en haut à gauche */
+/* Panneau de création - palette neutre et sobre, façon shadcn/ui */
 #create-panel {
   position: absolute;
   top: 46px;
   left: 16px;
   width: 160px;
-  background: rgba(20, 20, 40, 0.55);
-  border: 1px solid rgba(75, 144, 255, 0.2);
-  border-radius: 6px;
-  padding: 10px;
-  backdrop-filter: blur(4px);
+  background: rgba(9, 9, 11, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  backdrop-filter: blur(8px);
 }
 #create-panel summary {
   font-size: 11px;
-  font-weight: 600;
-  color: #8fb4ff;
+  font-weight: 500;
+  color: #fafafa;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -129,28 +138,29 @@ canvas {
 #create-panel label {
   display: block;
   font-size: 10px;
-  color: #888;
-  margin-bottom: 2px;
+  color: #a1a1aa;
+  margin-bottom: 3px;
 }
 #create-panel input,
 #create-panel select {
   width: 100%;
-  padding: 3px 4px;
+  padding: 5px 6px;
   box-sizing: border-box;
-  background: #0a0a18;
-  border: 1px solid #444;
-  color: #ddd;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fafafa;
   font-size: 11px;
-  border-radius: 3px;
+  border-radius: 6px;
 }
-#create-panel .row-inputs {
-  display: flex;
-  gap: 4px;
+#create-panel input:focus,
+#create-panel select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
 }
 #create-panel .instruction {
   font-size: 10px;
-  color: #6fae8f;
-  margin-top: 6px;
+  color: #a1a1aa;
+  margin-top: 8px;
   display: flex;
   align-items: center;
   gap: 4px;
