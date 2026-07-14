@@ -16,9 +16,17 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class NBodyService {
 
+    // Borne la boucle O(n²) (500² paires par tick de 10ms) et la taille du
+    // snapshot MQTT ; le plus gros preset (collision de galaxies) fait 202 corps.
+    public static final int MAX_BODIES = 500;
+
     private final List<Body> bodies = new ArrayList<>();
 
-    public void addBody(BodyDto bodyDto) throws DuplicateBodyException {
+    public void addBody(BodyDto bodyDto) throws DuplicateBodyException, BodyLimitExceededException {
+        if (bodies.size() >= MAX_BODIES) {
+            throw new BodyLimitExceededException("Body limit reached (" + MAX_BODIES + "), ignoring body " + bodyDto.id());
+        }
+
         Body body = new Body(
                 bodyDto.id(),
                 bodyDto.type(),

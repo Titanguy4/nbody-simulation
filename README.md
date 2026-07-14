@@ -11,6 +11,8 @@
 
 Un moteur physique en temps réel simulant le problème à N corps, propulsé par Spring Boot et diffusé via MQTT.
 
+[nbody.hugotanguy.fr](http://nbody.hugotanguy.fr)
+
 ![Application image](/assets/application-system-solar.png)
 ![Application image](/assets/application-saturne.png)
 
@@ -133,6 +135,9 @@ Voici quelques fonctionnalités et améliorations prévues pour les prochaines v
 - Intégration de l'algorithme de Verlet pour une meilleure précision mathématique sur le long terme.
 - Ajout d'un système de collisions (fusion des masses lors d'un impact).
 - Implémentation de l'algorithme Barnes-Hut pour supporter plus de 10 000 corps simultanés sans perte de performance.
+- Mettre en place une CI/CD pour le déploiement
+- Ajouter la possibilitée de faire bouger les corps
+- Implémentation d'un système de sessions pour que tous le monde ne voient pas la même chose
 
 ---
 
