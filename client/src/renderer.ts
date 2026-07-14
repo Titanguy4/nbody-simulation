@@ -1,62 +1,72 @@
-// Renderer: draws simulation ticks onto the canvas. Knows nothing about
-// MQTT or the side panel.
-class Renderer {
-  constructor(canvas) {
+// Renderer: draws simulation ticks onto the canvas. View math lives in
+// Viewport, the launch arrow in aim-overlay. Knows nothing about MQTT or
+// the side panel.
+import { drawAim, type Aim } from "./aim-overlay";
+import { COLORS } from "./config";
+import { bodyTypeName, type Body, type Vec2 } from "./types";
+import { Viewport } from "./viewport";
+
+interface RenderedBody {
+  body: Body;
+  screenX: number;
+  screenY: number;
+  radius: number;
+}
+
+export class Renderer {
+  readonly canvas: HTMLCanvasElement;
+  readonly viewport: Viewport;
+
+  private readonly ctx: CanvasRenderingContext2D;
+  private renderedBodies: RenderedBody[] = [];
+  private lastBodies: Body[] = [];
+  private aim: Aim | null = null;
+
+  constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext("2d");
-    this.scale = 1;
-    this.universeRadius = 8e11;
-    this.renderedBodies = [];
+    this.ctx = canvas.getContext("2d")!;
+    this.viewport = new Viewport(canvas);
 
     window.addEventListener("resize", () => this.resize());
     this.resize();
   }
 
-  resize() {
+  resize(): void {
     this.canvas.width = window.innerWidth;
     this.canvas.height = window.innerHeight;
-    this.calculateScale();
+    this.viewport.rescale();
   }
 
-  calculateScale() {
-    this.scale =
-      Math.min(this.canvas.width, this.canvas.height) /
-      (2 * this.universeRadius);
+  zoom(deltaY: number, pivotX?: number, pivotY?: number): void {
+    this.zoomBy(deltaY < 0 ? 1.25 : 0.8, pivotX, pivotY);
   }
 
-  zoom(deltaY) {
-    this.zoomBy(deltaY < 0 ? 1.25 : 0.8);
-  }
-
-  // factor > 1 zooms in, < 1 zooms out. Used by wheel and pinch gestures.
-  zoomBy(factor) {
-    this.universeRadius /= factor;
-    this.calculateScale();
+  zoomBy(factor: number, pivotX?: number, pivotY?: number): void {
+    this.viewport.zoomBy(factor, pivotX, pivotY);
     this.clear();
   }
 
-  clear() {
+  resetView(): void {
+    this.viewport.reset();
+  }
+
+  screenToWorld(clientX: number, clientY: number): Vec2 {
+    return this.viewport.screenToWorld(clientX, clientY);
+  }
+
+  clear(): void {
     this.ctx.fillStyle = "#050510";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  screenToWorld(clientX, clientY) {
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
-    return {
-      x: (clientX - centerX) / this.scale,
-      y: (clientY - centerY) / this.scale,
-    };
-  }
-
-  drawScale() {
-    const targetMeters = 150 / this.scale;
+  private drawScale(): void {
+    const targetMeters = 150 / this.viewport.scale;
     const exponent = Math.floor(Math.log10(targetMeters));
     const fraction = targetMeters / Math.pow(10, exponent);
-    let niceFraction = fraction >= 5 ? 5 : fraction >= 2 ? 2 : 1;
+    const niceFraction = fraction >= 5 ? 5 : fraction >= 2 ? 2 : 1;
 
     const niceMeters = niceFraction * Math.pow(10, exponent);
-    const barWidth = niceMeters * this.scale;
+    const barWidth = niceMeters * this.viewport.scale;
 
     let text = "";
     const km = niceMeters / 1000;
@@ -88,18 +98,21 @@ class Renderer {
     ctx.fillText(text, x, y - 10);
   }
 
-  drawUniverse(bodies) {
+  drawUniverse(bodies: Body[]): void {
+    this.lastBodies = bodies;
     const ctx = this.ctx;
-    ctx.fillStyle = "rgba(5, 5, 16, 0.3)";
+    // While aiming, repaint fully opaque so the previous arrow frame does
+    // not ghost; the motion-trail effect resumes on release.
+    ctx.fillStyle = this.aim ? "#050510" : "rgba(5, 5, 16, 0.3)";
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
     this.renderedBodies = [];
 
     bodies.forEach((body) => {
-      const screenX = centerX + body.position.x * this.scale;
-      const screenY = centerY + body.position.y * this.scale;
+      const { x: screenX, y: screenY } = this.viewport.worldToScreen(
+        body.position.x,
+        body.position.y,
+      );
 
       if (
         screenX < 0 ||
@@ -109,25 +122,41 @@ class Renderer {
       )
         return;
 
-      const bodyName = body.type.name || body.type;
+      const bodyName = bodyTypeName(body);
       const isStar = bodyName === "Sun" || bodyName === "STAR";
       const radius = isStar ? 10 : 5;
 
       ctx.beginPath();
       ctx.arc(screenX, screenY, radius, 0, 2 * Math.PI);
       ctx.fillStyle = COLORS[bodyName] || "#ffffff";
-      ctx.shadowBlur = isStar ? 20 : 6;
+      ctx.shadowBlur = isStar ? 5 : 2;
       ctx.shadowColor = ctx.fillStyle;
       ctx.fill();
 
       this.renderedBodies.push({ body, screenX, screenY, radius });
     });
     this.drawScale();
+    if (this.aim) drawAim(ctx, this.aim);
+  }
+
+  // Aim overlay shown while the user drags to launch a body.
+  setAim(aim: Aim): void {
+    this.aim = aim;
+    this.redraw();
+  }
+
+  clearAim(): void {
+    this.aim = null;
+    this.redraw();
+  }
+
+  redraw(): void {
+    this.drawUniverse(this.lastBodies);
   }
 
   // Finds the topmost body under (clientX, clientY), with a little extra
   // hit-testing margin so small bodies stay easy to hover.
-  getBodyAt(clientX, clientY) {
+  getBodyAt(clientX: number, clientY: number): Body | null {
     const rect = this.canvas.getBoundingClientRect();
     const x = clientX - rect.left;
     const y = clientY - rect.top;

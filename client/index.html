@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>N-Body Simulation - Interactive</title>
     <link rel="stylesheet" href="css/style.css" />
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   </head>
   <body>
     <div id="preset-bar">
@@ -52,16 +50,9 @@
         <label>Masse (kg)</label>
         <input type="number" id="input-mass" value="5.972e24" />
       </div>
-      <div class="form-group">
-        <label>Vitesse Initiale X & Y (m/s)</label>
-        <div class="row-inputs">
-          <input type="number" id="input-vx" value="0" placeholder="VX" />
-          <input type="number" id="input-vy" value="25000" placeholder="VY" />
-        </div>
-      </div>
       <div class="instruction">
-        <i data-lucide="mouse-pointer-click" class="icon"></i> Cliquez sur
-        l'espace pour l'ajouter
+        <i data-lucide="mouse-pointer-click" class="icon"></i> Cliquez pour
+        ajouter, maintenez et étirez pour lancer
       </div>
     </details>
 
@@ -76,10 +67,6 @@
 
     <div id="body-tooltip" class="hidden"></div>
 
-    <script src="js/config.js"></script>
-    <script src="js/mqtt-client.js"></script>
-    <script src="js/renderer.js"></script>
-    <script src="js/panel.js"></script>
-    <script src="js/main.js"></script>
+    <script type="module" src="src/main.ts"></script>
   </body>
 </html>
